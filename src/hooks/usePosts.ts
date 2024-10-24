@@ -1,129 +1,88 @@
+// src/hooks/usePosts.ts
 import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { supabase } from '@/lib/supabase';
-import type { Post, SortOption, UserVotes } from '@/types/post';
+import type { Post } from '@/types/post';
 
-export function usePosts(sortBy: SortOption) {
-  const { user } = useUser();
+export function usePosts(sortBy: string) {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [userVotes, setUserVotes] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [userVotes, setUserVotes] = useState<UserVotes>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function fetchPosts() {
-      if (!mounted) return;
-      
+    const fetchPosts = async () => {
       setIsLoading(true);
       setError(null);
       
       try {
-        // Fetch posts with community information
+        // First fetch posts with communities
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select(`
             id,
             title,
             content,
-            url,
             type,
+            url,
             vote_count,
             comment_count,
             created_at,
             user_id,
-            communities!inner (
+            communities (
+              id,
               name
             )
           `)
           .order(sortBy === 'hot' ? 'hot_score' : 
-                 sortBy === 'new' ? 'created_at' : 
-                 'vote_count', { ascending: false })
-          .limit(50);
+                 sortBy === 'top' ? 'vote_count' : 
+                 'created_at', { ascending: false, nullsLast: true });
 
-        if (postsError) {
-          throw postsError;
-        }
+        if (postsError) throw postsError;
+        if (!postsData) throw new Error('No posts data received');
 
-        if (!mounted) return;
-        setPosts(postsData || []);
+        // Then fetch usernames for all user_ids in the posts
+        const userIds = [...new Set(postsData.map(post => post.user_id))];
+        
+        const { data: usersData, error: usersError } = await supabase
+          .from('users')
+          .select('id, username')
+          .in('id', userIds);
 
-        // Only fetch votes if user is logged in
-        if (user?.id && mounted) {
-          try {
-            // Convert Clerk user ID to UUID format if needed
-            // This is a temporary solution - ideally, update the database schema
-            // to use text type for user_id in user_post_votes table
-            const { data: votesData } = await supabase
-              .from('user_post_votes')
-              .select('post_id, value')
-              .eq('user_id', user.id.toString());
+        if (usersError) throw usersError;
 
-            if (mounted && votesData) {
-              const votesMap = votesData.reduce<UserVotes>((acc, vote) => {
-                acc[vote.post_id] = vote.value;
-                return acc;
-              }, {});
-              setUserVotes(votesMap);
-            }
-          } catch (voteError) {
-            // Log the vote error but don't fail the whole posts fetch
-            console.warn('Failed to fetch user votes:', voteError);
-            if (mounted) {
-              setUserVotes({});
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        if (mounted) {
-          setError('Failed to load posts');
-        }
+        // Create a map of user_id to username
+        const userMap = (usersData || []).reduce((acc, user) => ({
+          ...acc,
+          [user.id]: user.username
+        }), {} as Record<string, string>);
+
+        // Combine the data
+        const postsWithUsernames = postsData.map(post => ({
+          ...post,
+          users: userMap[post.user_id] ? {
+            id: post.user_id,
+            username: userMap[post.user_id]
+          } : null
+        }));
+
+        setPosts(postsWithUsernames as Post[]);
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+        setError('Failed to load posts');
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
-    }
+    };
 
     fetchPosts();
+  }, [sortBy]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [sortBy, user]);
-
-  const updateLocalVote = (postId: string, value: number | null) => {
-    setUserVotes(prev => {
-      const next = { ...prev };
-      if (value === null) {
-        delete next[postId];
-      } else {
-        next[postId] = value;
-      }
-      return next;
-    });
-  };
-
-  const updateLocalPostVoteCount = (postId: string, changeAmount: number) => {
-    setPosts(currentPosts =>
-      currentPosts.map(post =>
-        post.id === postId
-          ? { ...post, vote_count: post.vote_count + changeAmount }
-          : post
-      )
-    );
-  };
-
-  return { 
-    posts, 
-    isLoading, 
-    error, 
-    userVotes, 
-    setPosts, 
+  return {
+    posts,
+    isLoading,
+    error,
+    userVotes,
+    setPosts,
     setUserVotes,
-    updateLocalVote,
-    updateLocalPostVoteCount
   };
 }

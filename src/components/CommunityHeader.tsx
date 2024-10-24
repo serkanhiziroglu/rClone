@@ -3,13 +3,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Community } from '@/types/community';
 
-interface Community {
-  name: string;
-  description: string | null;
-  member_count: number;
-  created_at: string;
-}
 
 interface CommunityHeaderProps {
   community: Community;

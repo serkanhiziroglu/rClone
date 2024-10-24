@@ -1,30 +1,13 @@
-// src/components/PostList.tsx
 'use client';
 
 import React from 'react';
-import { Flame, Clock, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { SortControls } from './SortControls';
+import type { SortOption } from '@/types/post';
+import { Post } from '@/types/post';
 
-type SortOption = 'hot' | 'new' | 'top';
 
-interface Post {
-  id: string;
-  title: string;
-  content: string | null;
-  vote_count: number;
-  created_at: string;
-  comment_count: number;
-  user_id: string;
-  profiles?: {
-    username: string;
-  };
-}
-
-interface Community {
-  id: string;
-  name: string;
-}
 
 interface PostListProps {
   posts: Post[];
@@ -44,45 +27,15 @@ const PostList: React.FC<PostListProps> = ({
   setSortBy 
 }) => (
   <div className="bg-white rounded-lg border p-6">
-    <div className="flex gap-2 mb-6">
-      <button
-        onClick={() => setSortBy('hot')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'hot'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
-      >
-        <Flame size={20} /> Hot
-      </button>
-      <button
-        onClick={() => setSortBy('new')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'new'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
-      >
-        <Clock size={20} /> New
-      </button>
-      <button
-        onClick={() => setSortBy('top')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'top'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
-      >
-        <TrendingUp size={20} /> Top
-      </button>
-    </div>
+    <SortControls sortBy={sortBy} setSortBy={setSortBy} />
 
-    {posts.length > 0 ? (
+    {posts.length === 0 ? (
+      <p className="text-gray-500">No posts yet. Be the first to create one!</p>
+    ) : (
       <div className="space-y-4">
         {posts.map((post) => (
           <div key={post.id} className="bg-white border rounded-lg p-4">
             <div className="flex gap-4">
-              {/* Vote buttons */}
               <div className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => handleVote(post.id, 1)}
@@ -92,9 +45,7 @@ const PostList: React.FC<PostListProps> = ({
                 >
                   <FaArrowUp size={20} />
                 </button>
-                <span className="text-sm font-medium">
-                  {post.vote_count}
-                </span>
+                <span className="text-sm font-medium">{post.vote_count}</span>
                 <button
                   onClick={() => handleVote(post.id, -1)}
                   className={`p-1 rounded hover:bg-gray-100 ${
@@ -105,10 +56,9 @@ const PostList: React.FC<PostListProps> = ({
                 </button>
               </div>
 
-              {/* Post content */}
               <div className="flex-1">
                 <div className="text-sm text-gray-500 mb-1">
-                  Posted by u/{post.profiles?.username || post.user_id}
+                  Posted by u/{post.users?.username || 'deleted'}
                 </div>
                 
                 <Link 
@@ -140,8 +90,6 @@ const PostList: React.FC<PostListProps> = ({
           </div>
         ))}
       </div>
-    ) : (
-      <p className="text-gray-500">No posts yet. Be the first to create one!</p>
     )}
   </div>
 );

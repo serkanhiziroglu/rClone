@@ -52,21 +52,55 @@ export function useCommunityData(slug: string, sortBy: SortOption) {
 
         switch (sortBy) {
           case 'hot':
-            query = query.order('hot_score', { ascending: false });
+            query = query.order('hot_score', { ascending: false, nullsLast: true });
             break;
           case 'new':
             query = query.order('created_at', { ascending: false });
             break;
           case 'top':
-            query = query.order('vote_count', { ascending: false });
+            query = query.order('vote_count', { ascending: false, nullsLast: true });
             break;
         }
 
         const { data: postsData, error: postsError } = await query;
         if (postsError) throw postsError;
         if (!mounted) return;
-        
-        setPosts(postsData || []);
+
+        // Fetch usernames for all posts
+        if (postsData && postsData.length > 0) {
+          const userIds = [...new Set(postsData.map(post => post.user_id))];
+          
+          const { data: usersData, error: usersError } = await supabase
+            .from('users')
+            .select('id, username')
+            .in('id', userIds);
+
+          if (usersError) throw usersError;
+          if (!mounted) return;
+
+          // Create a map of user_id to username
+          const userMap = (usersData || []).reduce((acc, user) => ({
+            ...acc,
+            [user.id]: user.username
+          }), {} as Record<string, string>);
+
+          // Combine posts with usernames and community data
+          const postsWithUsernames = postsData.map(post => ({
+            ...post,
+            users: userMap[post.user_id] ? {
+              id: post.user_id,
+              username: userMap[post.user_id]
+            } : null,
+            communities: {
+              id: communityData.id,
+              name: communityData.name
+            }
+          }));
+
+          setPosts(postsWithUsernames);
+        } else {
+          setPosts([]);
+        }
 
         // Fetch user votes if logged in
         if (user?.id && mounted) {

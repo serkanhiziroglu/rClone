@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import { usePosts } from '@/hooks/usePosts';
 import { PostVoteHandler } from '@/components/PostVoteHandler';
 import { SortControls } from '@/components/SortControls';
@@ -77,6 +76,9 @@ export default function Home() {
     }
   };
 
+  if (error) return <div className="text-center text-red-500 py-8">{error}</div>;
+  if (isLoading) return <div className="text-center py-8">Loading posts...</div>;
+
   return (
     <div className="max-w-4xl mx-auto p-4 pt-20">
       <div className="mb-6">
@@ -89,15 +91,10 @@ export default function Home() {
             Create Post
           </Link>
         </div>
-
         <SortControls sortBy={sortBy} setSortBy={setSortBy} />
       </div>
 
-      {error && <div className="text-center text-red-500 py-8">{error}</div>}
-      
-      {isLoading ? (
-        <div className="text-center py-8">Loading posts...</div>
-      ) : posts.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="text-center py-8">No posts yet.</div>
       ) : (
         <div className="space-y-4">
@@ -122,7 +119,7 @@ export default function Home() {
                     </Link>
                     {' '}by{' '}
                     <span className="hover:underline">
-                      u/{post.user_id}
+                      u/{post.users?.username || 'deleted'}
                     </span>
                   </div>
                   
