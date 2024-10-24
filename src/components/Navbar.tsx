@@ -1,11 +1,17 @@
-// src/components/Navbar.tsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { Home, Users, PlusCircle, Search, LucideIcon, Edit } from 'lucide-react';
+import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { Home, Users, PlusCircle, Search, LucideIcon, Edit, User, Settings } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NavLinkProps {
   href: string;
@@ -37,8 +43,8 @@ const NavLink = ({ href, children, icon: Icon, onClick }: NavLinkProps) => {
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useUser();
   const isInCommunity = pathname?.startsWith('/r/');
-
   const communityName = isInCommunity ? pathname.split('/')[2] : null;
 
   return (
@@ -102,21 +108,65 @@ const Navbar = () => {
             </SignedOut>
             
             <SignedIn>
-              <UserButton 
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-10 h-10"
-                  }
-                }}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div>
+                    <UserButton 
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          avatarBox: "w-10 h-10"
+                        }
+                      }}
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      href={`/u/${user?.username}`}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <User size={16} />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      href="/settings"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Settings size={16} />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SignedIn>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
             <SignedIn>
-              <UserButton afterSignOutUrl="/" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div>
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      href={`/u/${user?.username}`}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <User size={16} />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SignedIn>
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -159,6 +209,13 @@ const Navbar = () => {
                   Communities
                 </NavLink>
                 <SignedIn>
+                  <NavLink 
+                    href={`/u/${user?.username}`}
+                    icon={User}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Profile
+                  </NavLink>
                   {isInCommunity ? (
                     <NavLink 
                       href={`/r/${communityName}/submit`} 

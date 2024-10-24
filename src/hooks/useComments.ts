@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { supabase } from '@/lib/supabase';
-import type { CommentType } from '@/types/comment';
+import { CommentType } from '@/types/Comment';
 
 export type CommentSortOption = 'new' | 'hot' | 'controversial';
 

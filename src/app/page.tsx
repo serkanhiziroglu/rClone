@@ -8,6 +8,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { PostVoteHandler } from '@/components/PostVoteHandler';
 import { SortControls } from '@/components/SortControls';
 import type { SortOption } from '@/types/post';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>('hot');
