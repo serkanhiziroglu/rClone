@@ -1,12 +1,37 @@
-// src/app/communities/page.tsx
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default async function CommunitiesPage() {
-  const { data: communities } = await supabase
-    .from('communities')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let communities = null;
+
+  try {
+    // Fetch data from Supabase
+    const { data, error } = await supabase
+      .from('communities')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // Handle potential errors during data fetching
+    if (error) {
+      console.error('Error fetching communities:', error);
+      throw new Error('Could not fetch communities');
+    }
+
+    communities = data;
+  } catch (error) {
+    console.error('Error while loading communities:', error);
+  }
+
+  // Loading state
+  if (communities === null) {
+    return (
+      <div className="max-w-6xl mx-auto p-4 pt-20">
+        <div className="text-center py-8 text-gray-500">
+          Loading communities...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4 pt-20">
@@ -21,23 +46,23 @@ export default async function CommunitiesPage() {
       </div>
 
       <div className="grid gap-4">
-        {communities?.map((community) => (
-          <Link
-            key={community.id}
-            href={`/r/${community.name}`}
-            className="block p-4 border rounded-lg hover:border-orange-500 transition-colors"
-          >
-            <h2 className="text-lg font-semibold">r/{community.name}</h2>
-            {community.description && (
-              <p className="text-gray-600 mt-1">{community.description}</p>
-            )}
-            <p className="text-sm text-gray-500 mt-2">
-              {community.member_count} members
-            </p>
-          </Link>
-        ))}
-
-        {communities?.length === 0 && (
+        {communities.length > 0 ? (
+          communities.map((community) => (
+            <Link
+              key={community.id}
+              href={`/r/${community.name}`}
+              className="block p-4 border rounded-lg hover:border-orange-500 transition-colors"
+            >
+              <h2 className="text-lg font-semibold">r/{community.name}</h2>
+              {community.description && (
+                <p className="text-gray-600 mt-1">{community.description}</p>
+              )}
+              <p className="text-sm text-gray-500 mt-2">
+                {community.member_count} members
+              </p>
+            </Link>
+          ))
+        ) : (
           <div className="text-center py-8 text-gray-500">
             No communities found. Be the first to create one!
           </div>

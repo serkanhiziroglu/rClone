@@ -1,18 +1,20 @@
+// src/components/Navbar.tsx
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { Home, Users, PlusCircle, Search, LucideIcon } from 'lucide-react';
+import { Home, Users, PlusCircle, Search, LucideIcon, Edit } from 'lucide-react';
 
 interface NavLinkProps {
   href: string;
   children: React.ReactNode;
   icon: LucideIcon;
+  onClick?: () => void;
 }
 
-const NavLink = ({ href, children, icon: Icon }: NavLinkProps) => {
+const NavLink = ({ href, children, icon: Icon, onClick }: NavLinkProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
@@ -24,6 +26,7 @@ const NavLink = ({ href, children, icon: Icon }: NavLinkProps) => {
           ? 'text-orange-500 bg-orange-50' 
           : 'text-gray-700 hover:text-orange-500 hover:bg-gray-50'
       }`}
+      onClick={onClick}
     >
       <Icon size={20} />
       {children}
@@ -33,12 +36,16 @@ const NavLink = ({ href, children, icon: Icon }: NavLinkProps) => {
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isInCommunity = pathname?.startsWith('/r/');
+
+  const communityName = isInCommunity ? pathname.split('/')[2] : null;
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo and Navigation */}
           <div className="flex items-center gap-6">
             <Link href="/" className="text-orange-500 text-xl font-bold">
               MiniReddit
@@ -53,8 +60,17 @@ const Navbar = () => {
                 Communities
               </NavLink>
               <SignedIn>
+                {isInCommunity ? (
+                  <NavLink href={`/r/${communityName}/submit`} icon={Edit}>
+                    Create Post
+                  </NavLink>
+                ) : (
+                  <NavLink href="/submit" icon={Edit}>
+                    Create Post
+                  </NavLink>
+                )}
                 <NavLink href="/create-community" icon={PlusCircle}>
-                  Create
+                  Create Community
                 </NavLink>
               </SignedIn>
             </div>
@@ -136,14 +152,35 @@ const Navbar = () => {
               
               {/* Mobile Navigation Links */}
               <div className="px-4 space-y-1">
-                <NavLink href="/" icon={Home}>
+                <NavLink href="/" icon={Home} onClick={() => setIsMobileMenuOpen(false)}>
                   Home
                 </NavLink>
-                <NavLink href="/communities" icon={Users}>
+                <NavLink href="/communities" icon={Users} onClick={() => setIsMobileMenuOpen(false)}>
                   Communities
                 </NavLink>
                 <SignedIn>
-                  <NavLink href="/create-community" icon={PlusCircle}>
+                  {isInCommunity ? (
+                    <NavLink 
+                      href={`/r/${communityName}/submit`} 
+                      icon={Edit}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Create Post
+                    </NavLink>
+                  ) : (
+                    <NavLink 
+                      href="/submit" 
+                      icon={Edit}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Create Post
+                    </NavLink>
+                  )}
+                  <NavLink 
+                    href="/create-community" 
+                    icon={PlusCircle}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     Create Community
                   </NavLink>
                 </SignedIn>
