@@ -14,7 +14,7 @@ async function syncUserWithSupabase(user) {
     id: user.id,
     username: user.username || user.firstName || 'anonymous',
     email: user.emailAddresses[0]?.emailAddress || null,
-    updated_at: new Date().toISOString()
+    created_at: new Date().toISOString(), // Only include created_at
   };
 
   console.log('Attempting to sync user data:', userData);
@@ -39,7 +39,7 @@ async function syncUserWithSupabase(user) {
       // Insert new user
       const { data: newUser, error: insertError } = await supabase
         .from('users')
-        .insert([{ ...userData, created_at: new Date().toISOString() }])
+        .insert([userData]) // No updated_at field
         .select()
         .single();
 
@@ -50,43 +50,17 @@ async function syncUserWithSupabase(user) {
       syncedUser = newUser;
       console.log('New user created:', newUser);
     } else {
-      console.log('User exists, updating user');
-      // Update existing user
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update(userData)
-        .eq('id', userData.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Error updating user:', updateError);
-        return null;
-      }
-      syncedUser = updatedUser;
-      console.log('User updated:', updatedUser);
+      console.log('User exists, no need to update updated_at');
+      syncedUser = existingUser;
     }
 
-    // Verify the sync
-    const { data: verifyUser, error: verifyError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userData.id)
-      .single();
-
-    if (verifyError) {
-      console.error('Error verifying user sync:', verifyError);
-      return null;
-    }
-
-    console.log('User sync verified:', verifyUser);
-    return verifyUser;
-
+    return syncedUser;
   } catch (error) {
     console.error('Unexpected error in syncUserWithSupabase:', error);
     return null;
   }
 }
+
 
 export default function SyncUser() {
   const { user, isLoaded } = useUser();
