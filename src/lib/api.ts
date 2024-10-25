@@ -28,29 +28,54 @@ export async function getCommunity(name: string) {
   return community;
 }
 
-export async function getPosts(communityId: string, sortBy: string = 'hot') {
-  if (!communityId) {
-    throw new Error('Community ID is required');
-  }
+// lib/api.ts
 
+// lib/api.ts
+
+export async function getPosts(communityId?: string, sortBy: string = 'hot') {
   let query = supabase
     .from('posts')
     .select(`
-      *,
-      profiles!posts_user_id_fkey(username)
-    `)
-    .eq('community_id', communityId);
+      id,
+      title,
+      content,
+      type,
+      url,
+      vote_count,
+      comment_count,
+      created_at,
+      user_id,
+      communities!inner (
+        id,
+        name
+      ),
+      users (
+        id,
+        username
+      )
+    `);
 
+  // If communityId is provided, filter by it
+  if (communityId) {
+    query = query.eq('community_id', communityId);
+  }
+
+  // Apply sorting
   switch (sortBy) {
     case 'hot':
-      query = query.order('hot_score', { ascending: false });
+      query = query.order('hot_score', { ascending: false, nullsLast: true });
       break;
     case 'new':
       query = query.order('created_at', { ascending: false });
       break;
     case 'top':
-      query = query.order('vote_count', { ascending: false });
+      query = query.order('vote_count', { ascending: false, nullsLast: true });
       break;
+  }
+
+  // For home page or profile, limit the number of posts
+  if (!communityId) {
+    query = query.limit(50);
   }
 
   const { data: posts, error } = await query;
@@ -63,42 +88,83 @@ export async function getPosts(communityId: string, sortBy: string = 'hot') {
   return posts || [];
 }
 
-export async function getAllPosts(sortBy: string = 'hot') {
-  try {
-    let query = supabase
-      .from('posts')
-      .select(`
-        *,
-        communities!inner(name),
-        profiles!posts_user_id_fkey(username)
-      `);
+// For getting user-specific posts
+export async function getUserPosts(userId: string, sortBy: string = 'new') {
+  if (!userId) return [];
 
-    switch (sortBy) {
-      case 'hot':
-        query = query.order('hot_score', { ascending: false });
-        break;
-      case 'new':
-        query = query.order('created_at', { ascending: false });
-        break;
-      case 'top':
-        query = query.order('vote_count', { ascending: false });
-        break;
-    }
+  const query = supabase
+    .from('posts')
+    .select(`
+      id,
+      title,
+      content,
+      type,
+      url,
+      vote_count,
+      comment_count,
+      created_at,
+      user_id,
+      communities!inner (
+        id,
+        name
+      ),
+      users (
+        id,
+        username
+      )
+    `)
+    .eq('user_id', userId)
+    .order(sortBy === 'new' ? 'created_at' : 'vote_count', { ascending: false });
 
-    const { data: posts, error } = await query.limit(50);
+  const { data: posts, error } = await query;
 
-    if (error) {
-      console.error('Supabase getAllPosts error:', error.message);
-      throw new Error(`Failed to fetch posts: ${error.message}`);
-    }
-
-    return posts || [];
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to fetch posts: ${error.message}`);
-    }
-    throw new Error('Failed to fetch posts: Unknown error');
+  if (error) {
+    console.error('Supabase getUserPosts error:', error.message);
+    throw new Error(`Failed to fetch user posts: ${error.message}`);
   }
+
+  return posts || [];
+}
+
+// For getting all posts (home page)
+export async function getAllPosts(sortBy: string = 'hot') {
+  const query = supabase
+    .from('posts')
+    .select(`
+      id,
+      title,
+      content,
+      type,
+      url,
+      vote_count,
+      comment_count,
+      created_at,
+      user_id,
+      communities!inner (
+        id,
+        name
+      ),
+      users (
+        id,
+        username
+      )
+    `)
+    .order(
+      sortBy === 'hot' ? 'hot_score' : 
+      sortBy === 'new' ? 'created_at' : 
+      'vote_count', 
+      { ascending: false, nullsLast: true }
+    )
+    .limit(50);
+
+  const { data: posts, error } = await query;
+
+  if (error) {
+    console.error('Supabase getAllPosts error:', error.message);
+    throw new Error(`Failed to fetch posts: ${error.message}`);
+  }
+
+  return posts || [];
 }
 
 export async function handleVote({

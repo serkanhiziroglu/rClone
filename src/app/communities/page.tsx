@@ -1,29 +1,62 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import type { Community } from '@/types/community';
 
-export default async function CommunitiesPage() {
-  let communities = null;
+export default function CommunitiesPage() {
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    // Fetch data from Supabase
-    const { data, error } = await supabase
-      .from('communities')
-      .select('*')
-      .order('created_at', { ascending: false });
+  useEffect(() => {
+    // Initial fetch
+    async function fetchCommunities() {
+      try {
+        const { data, error } = await supabase
+          .from('communities')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-    // Handle potential errors during data fetching
-    if (error) {
-      console.error('Error fetching communities:', error);
-      throw new Error('Could not fetch communities');
+        if (error) throw error;
+        setCommunities(data || []);
+      } catch (error) {
+        console.error('Error fetching communities:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    communities = data;
-  } catch (error) {
-    console.error('Error while loading communities:', error);
-  }
+    fetchCommunities();
 
-  // Loading state
-  if (communities === null) {
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('communities-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'communities'
+        },
+        async (payload) => {
+          // Refetch all communities when there's any change
+          const { data } = await supabase
+            .from('communities')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          setCommunities(data || []);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto p-4 pt-20">
         <div className="text-center py-8 text-gray-500">
@@ -58,7 +91,7 @@ export default async function CommunitiesPage() {
                 <p className="text-gray-600 mt-1">{community.description}</p>
               )}
               <p className="text-sm text-gray-500 mt-2">
-                {community.member_count} members
+                {community.member_count || 0} members
               </p>
             </Link>
           ))
