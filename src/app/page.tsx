@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { usePosts } from '@/hooks/usePosts';
-import { PostVoteHandler } from '@/components/PostVoteHandler';
+import PostVoteHandler from '@/components/PostVoteHandler';
 import { SortControls } from '@/components/SortControls';
 import type { SortOption } from '@/types/post';
 import { supabase } from '@/lib/supabase';

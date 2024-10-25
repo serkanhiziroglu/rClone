@@ -23,16 +23,31 @@ export default function CreateCommunity() {
     setError('');
 
     try {
-      // Create the community with initial member count of 1
+      const communityName = name.toLowerCase().trim();
+
+      // Check if community exists first
+      const { data: existingCommunity } = await supabase
+        .from('communities')
+        .select('name')
+        .eq('name', communityName)
+        .maybeSingle();
+
+      if (existingCommunity) {
+        setError('This community name is already taken');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create the community
       const { data: community, error: communityError } = await supabase
         .from('communities')
         .insert([
           {
-            name: name.toLowerCase(),
+            name: communityName,
             description: description || null,
             creator_id: user.id,
             type: 'public',
-            member_count: 1  // Start with 1 since creator will be a member
+            member_count: 1
           }
         ])
         .select()
@@ -40,8 +55,8 @@ export default function CreateCommunity() {
 
       if (communityError) throw communityError;
 
-      // Add creator as admin member immediately after
-      const { error: memberError } = await supabase
+      // Add creator as admin
+      await supabase
         .from('community_members')
         .insert({
           community_id: community.id,
@@ -49,8 +64,6 @@ export default function CreateCommunity() {
           role: 'admin',
           joined_at: new Date().toISOString()
         });
-
-      if (memberError) throw memberError;
 
       // Create default rules
       const defaultRules = [
@@ -74,37 +87,17 @@ export default function CreateCommunity() {
         }
       ];
 
-      const { error: rulesError } = await supabase
-        .from('community_rules')
-        .insert(defaultRules);
+      await supabase.from('community_rules').insert(defaultRules);
 
-      if (rulesError) {
-        console.error('Error creating rules:', rulesError);
-        // Don't throw here as rules are not critical
-      }
+      // Add small delay to ensure everything is saved
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Use replace instead of push to prevent back navigation issues
+      router.replace(`/r/${communityName}`);
 
-      // Navigate to the new community
-      router.push(`/r/${name}`);
-      router.refresh();
     } catch (err) {
       console.error('Error:', err);
-      setError(
-        err.message === 'duplicate key value violates unique constraint' 
-          ? 'This community name is already taken' 
-          : 'Failed to create community. Please try again.'
-      );
-
-      // If there was an error, try to clean up
-      if (err.message !== 'duplicate key value violates unique constraint') {
-        try {
-          await supabase
-            .from('communities')
-            .delete()
-            .eq('name', name.toLowerCase());
-        } catch (cleanupError) {
-          console.error('Error cleaning up:', cleanupError);
-        }
-      }
+      setError('Failed to create community. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

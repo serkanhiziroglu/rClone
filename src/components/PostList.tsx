@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { FaArrowUp, FaArrowDown, FaComment } from 'react-icons/fa';
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { MessageSquare } from 'lucide-react';
 import { SortControls } from './SortControls';
 import type { SortOption } from '@/types/post';
 import type { Post } from '@/types/post';
@@ -25,16 +26,20 @@ export default function PostList({
   sortBy,
   setSortBy 
 }: PostListProps) {
-  const getPostUrl = (post: Post) => {
-    // Get community name from post's communities object
-    const communityName = post.communities?.name || community?.name;
-    if (!communityName) return '#';
-    return `/r/${communityName}/post/${post.id}`;
-  };
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const prevPostsLength = useRef(posts.length);
+
+  useEffect(() => {
+    // If posts length increased (new post added)
+    if (posts.length > prevPostsLength.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevPostsLength.current = posts.length;
+  }, [posts.length]);
 
   return (
     <div>
-      {/* Sort controls */}
+      {/* Sort controls in their own container with proper spacing */}
       <div className="bg-white rounded-lg border p-4 mb-4">
         <SortControls sortBy={sortBy} setSortBy={setSortBy} />
       </div>
@@ -84,34 +89,30 @@ export default function PostList({
                   </div>
 
                   {/* Post content */}
-                  <div className="flex-1 min-w-0">
-                    {/* Metadata */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                      <Link
-                        href={`/r/${post.communities.name}`}
-                        className="hover:underline text-orange-500"
-                      >
-                        r/{post.communities.name}
-                      </Link>
-                      <span>•</span>
-                      Posted by{' '}
-                      {post.users ? (
-                        <Link 
-                          href={`/u/${post.users.username}`}
-                          className="hover:underline"
-                        >
-                          u/{post.users.username}
-                        </Link>
-                      ) : (
-                        <span>u/[deleted]</span>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-500 mb-1">
+                      {post.communities && (
+                        <>
+                          Posted in{' '}
+                          <Link
+                            href={`/r/${post.communities.name}`}
+                            className="text-orange-500 hover:underline"
+                          >
+                            r/{post.communities.name}
+                          </Link>
+                          {' '}by{' '}
+                        </>
                       )}
-                      <span>•</span>
-                      <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                      <Link
+                        href={`/u/${post.users?.username || '[deleted]'}`}
+                        className="hover:underline"
+                      >
+                        u/{post.users?.username || '[deleted]'}
+                      </Link>
                     </div>
-                    
-                    {/* Title and content */}
+
                     <Link 
-                      href={getPostUrl(post)}
+                      href={`/r/${post.communities?.name || community?.name}/post/${post.id}`}
                       className="block group"
                     >
                       <h2 className="text-xl font-semibold group-hover:text-orange-500 mb-2">
@@ -119,9 +120,7 @@ export default function PostList({
                       </h2>
                       {post.type === 'text' && post.content && (
                         <div className="text-gray-700 mb-3">
-                          <p className="line-clamp-3">
-                            {post.content}
-                          </p>
+                          <p className="line-clamp-3">{post.content}</p>
                         </div>
                       )}
                       {post.type === 'link' && post.url && (
@@ -137,20 +136,25 @@ export default function PostList({
                       )}
                     </Link>
 
-                    {/* Post actions */}
+                    {/* Post metadata */}
                     <div className="flex items-center gap-4 mt-2">
                       <Link
-                        href={getPostUrl(post)}
+                        href={`/r/${post.communities?.name || community?.name}/post/${post.id}`}
                         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm"
                       >
-                        <FaComment size={14} />
+                        <MessageSquare size={14} />
                         <span>{post.comment_count || 0} comments</span>
                       </Link>
+                      <span className="text-sm text-gray-500">
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
+            {/* Scroll anchor */}
+            <div ref={bottomRef} />
           </div>
         )}
       </div>

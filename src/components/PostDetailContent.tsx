@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { usePost } from '@/hooks/usePost';
 import { CommentSection } from '@/components/CommentSection';
-import { PostVoteHandler } from '@/components/PostVoteHandler';
+import PostVoteHandler from './PostVoteHandler';
 import { handleVote } from '@/lib/voteHandler';
 import Link from 'next/link';
 

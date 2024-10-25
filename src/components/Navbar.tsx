@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import { Home, Users, PlusCircle, Search, LucideIcon, Edit, User, Settings } from 'lucide-react';
+import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut, useClerk, useUser } from "@clerk/nextjs";
+import { Home, Users, PlusCircle, Search, LogOut, Settings, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface NavLinkProps {
   href: string;
   children: React.ReactNode;
-  icon: LucideIcon;
+  icon: React.ComponentType<any>;
   onClick?: () => void;
 }
 
@@ -40,10 +41,11 @@ const NavLink = ({ href, children, icon: Icon, onClick }: NavLinkProps) => {
   );
 };
 
-const Navbar = () => {
+export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useUser();
+  const { signOut } = useClerk();
   const isInCommunity = pathname?.startsWith('/r/');
   const communityName = isInCommunity ? pathname.split('/')[2] : null;
 
@@ -67,11 +69,11 @@ const Navbar = () => {
               </NavLink>
               <SignedIn>
                 {isInCommunity ? (
-                  <NavLink href={`/r/${communityName}/submit`} icon={Edit}>
+                  <NavLink href={`/r/${communityName}/submit`} icon={PlusCircle}>
                     Create Post
                   </NavLink>
                 ) : (
-                  <NavLink href="/submit" icon={Edit}>
+                  <NavLink href="/submit" icon={PlusCircle}>
                     Create Post
                   </NavLink>
                 )}
@@ -96,14 +98,14 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-2">
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                <Button variant="ghost">
                   Log In
-                </button>
+                </Button>
               </SignInButton>
               <SignUpButton mode="modal">
-                <button className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors">
+                <Button>
                   Sign Up
-                </button>
+                </Button>
               </SignUpButton>
             </SignedOut>
             
@@ -131,7 +133,6 @@ const Navbar = () => {
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link 
                       href="/settings"
@@ -140,6 +141,14 @@ const Navbar = () => {
                       <Settings size={16} />
                       Settings
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer text-red-500 hover:text-red-600"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut size={16} />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -164,6 +173,23 @@ const Navbar = () => {
                       <User size={16} />
                       Profile
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      href="/settings"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Settings size={16} />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 cursor-pointer text-red-500 hover:text-red-600"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut size={16} />
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -209,17 +235,10 @@ const Navbar = () => {
                   Communities
                 </NavLink>
                 <SignedIn>
-                  <NavLink 
-                    href={`/u/${user?.username}`}
-                    icon={User}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </NavLink>
                   {isInCommunity ? (
                     <NavLink 
                       href={`/r/${communityName}/submit`} 
-                      icon={Edit}
+                      icon={PlusCircle}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Create Post
@@ -227,7 +246,7 @@ const Navbar = () => {
                   ) : (
                     <NavLink 
                       href="/submit" 
-                      icon={Edit}
+                      icon={PlusCircle}
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Create Post
@@ -244,24 +263,27 @@ const Navbar = () => {
               </div>
 
               {/* Mobile Auth Buttons */}
-              <div className="px-4 mt-4 space-y-2">
+              <div className="px-4 mt-4">
                 <SignedOut>
-                  <SignInButton mode="modal">
-                    <button 
-                      className="w-full px-4 py-2 text-center text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Log In
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button 
-                      className="w-full px-4 py-2 text-center text-white bg-orange-500 hover:bg-orange-600 rounded-md transition-colors"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Sign Up
-                    </button>
-                  </SignUpButton>
+                  <div className="space-y-2">
+                    <SignInButton mode="modal">
+                      <Button 
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Log In
+                      </Button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <Button
+                        className="w-full"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Sign Up
+                      </Button>
+                    </SignUpButton>
+                  </div>
                 </SignedOut>
               </div>
             </div>
@@ -270,6 +292,4 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}
