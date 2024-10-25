@@ -1,3 +1,7 @@
+// src/components/SortControls.tsx
+'use client';
+
+import { Button } from '@/components/ui/button';
 import { Flame, Clock, TrendingUp } from 'lucide-react';
 import type { SortOption } from '@/types/post';
 
@@ -8,37 +12,34 @@ interface SortControlsProps {
 
 export function SortControls({ sortBy, setSortBy }: SortControlsProps) {
   return (
-    <div className="flex gap-2 mt-4">
-      <button
+    <div className="flex gap-2">
+      <Button
+        variant={sortBy === 'hot' ? 'default' : 'outline'}
+        size="sm"
         onClick={() => setSortBy('hot')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'hot'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
+        className="flex items-center gap-1"
       >
-        <Flame size={20} /> Hot
-      </button>
-      <button
+        <Flame size={16} />
+        Hot
+      </Button>
+      <Button
+        variant={sortBy === 'new' ? 'default' : 'outline'}
+        size="sm"
         onClick={() => setSortBy('new')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'new'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
+        className="flex items-center gap-1"
       >
-        <Clock size={20} /> New
-      </button>
-      <button
+        <Clock size={16} />
+        New
+      </Button>
+      <Button
+        variant={sortBy === 'top' ? 'default' : 'outline'}
+        size="sm"
         onClick={() => setSortBy('top')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-          sortBy === 'top'
-            ? 'bg-orange-500 text-white'
-            : 'bg-gray-100 hover:bg-gray-200'
-        }`}
+        className="flex items-center gap-1"
       >
-        <TrendingUp size={20} /> Top
-      </button>
+        <TrendingUp size={16} />
+        Top
+      </Button>
     </div>
   );
 }

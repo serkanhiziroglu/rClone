@@ -65,25 +65,22 @@ export default function CreateCommunity() {
           joined_at: new Date().toISOString()
         });
 
-      // Create default rules
+      // Create default rules (reduced to 3 unique rules)
       const defaultRules = [
         {
           community_id: community.id,
           title: 'Be respectful',
-          description: 'Treat others with respect and follow basic reddiquette',
-          order_number: 1
+          description: 'Treat everyone with respect and engage in constructive discussions',
         },
         {
           community_id: community.id,
-          title: 'No spam',
-          description: 'No spam or self-promotion',
-          order_number: 2
+          title: 'No spam or self-promotion',
+          description: 'Keep content relevant and avoid excessive self-promotion',
         },
         {
           community_id: community.id,
           title: 'Follow content policy',
-          description: 'Follow the content policy and keep it civil',
-          order_number: 3
+          description: 'Adhere to platform guidelines and maintain civil discourse',
         }
       ];
 

@@ -4,14 +4,13 @@ import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import { MessageSquare } from 'lucide-react';
-import { SortControls } from './SortControls';
-import type { SortOption } from '@/types/post';
-import type { Post } from '@/types/post';
+import { SortControls } from '@/components/SortControls'; // This import is now correct
+import type { SortOption, Post, UserVotes } from '@/types/post';
 import type { Community } from '@/types/community';
 
 interface PostListProps {
   posts: Post[];
-  userVotes: Record<string, number>;
+  userVotes: UserVotes;
   handleVote: (postId: string, value: number) => void;
   community?: Community | null;
   sortBy: SortOption;

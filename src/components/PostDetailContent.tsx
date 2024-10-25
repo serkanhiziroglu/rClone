@@ -44,7 +44,7 @@ export default function PostDetailContent({
   if (!post) return <div className="text-center py-8">Post not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pt-20">
+    <div className="max-w-4xl mx-auto p-4 pt-8">
       <div className="bg-white rounded-lg border p-4">
         <div className="flex gap-4">
           <PostVoteHandler

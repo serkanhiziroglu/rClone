@@ -6,9 +6,10 @@ import { MessageSquare } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { usePosts } from '@/hooks/usePosts';
 import PostVoteHandler from '@/components/PostVoteHandler';
-import { SortControls } from '@/components/SortControls';
+import { SortControls } from '@/components/SortControls'; // This import is now correct
 import type { SortOption } from '@/types/post';
 import { supabase } from '@/lib/supabase';
+
 
 export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>('hot');
@@ -81,10 +82,10 @@ export default function Home() {
   if (isLoading) return <div className="text-center py-8">Loading posts...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pt-20">
+    <div className="max-w-4xl mx-auto p-4 pt-8">
       <div className="mb-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Popular Posts</h1>
+          <h1 className="text-3xl font-bold pb-6">Popular Posts</h1>
           <Link
             href="/submit"
             className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
@@ -96,7 +97,7 @@ export default function Home() {
       </div>
 
       {posts.length === 0 ? (
-        <div className="text-center py-8">No posts yet.</div>
+        <div className="text-center py-6">No posts yet.</div>
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
